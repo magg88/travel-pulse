@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelPulse - Мои патувања</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Навигација -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">✈️ TravelPulse</a>
+            <div class="navbar-nav">
+                <a class="nav-link active" href="trips-list.html">Мои патувања</a>
+                <a class="nav-link" href="add-trip.html">Ново патување</a>
+                <a class="nav-link" href="search-attractions.html">Пребарај атракции</a>
+                <a class="nav-link" href="login-register.html">Одјава</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Главна содржина -->
+    <div class="container">
+        
+        <!-- Заглавие и копче за ново патување -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>🧳 Мои патувања</h2>
+            <a href="add-trip.html" class="btn btn-success">+ Ново патување</a>
+        </div>
+
+        <!-- Листа на сите патувања (Мрежа од картички) -->
+        <div class="row g-4 mb-5">
+            <!-- Картичка 1 -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-primary">
+                    <div class="card-body">
+                        <span class="badge bg-primary mb-2">Активно</span>
+                        <h5 class="card-title fw-bold">Летен одмор во Рим</h5>
+                        <p class="card-text text-muted mb-1">📍 Рим, Италија</p>
+                        <p class="card-text text-muted mb-1">📅 15.07.2026 - 22.07.2026</p>
+                        <p class="card-text text-muted">💰 Буџет: 30,000 денари (485 €)</p>
+                    </div>
+                    <div class="card-footer bg-white d-flex justify-content-between">
+                        <a href="#trip-details" class="btn btn-sm btn-outline-primary">Детали</a>
+                        <div>
+                            <a href="edit-trip.html" class="btn btn-sm btn-outline-secondary">Уреди</a>
+                            <a href="delete-confirm.html" class="btn btn-sm btn-outline-danger">Избриши</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Картичка 2 -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <span class="badge bg-secondary mb-2">Планирано</span>
+                        <h5 class="card-title fw-bold">Викенд во Париз</h5>
+                        <p class="card-text text-muted mb-1">📍 Париз, Франција</p>
+                        <p class="card-text text-muted mb-1">📅 10.10.2026 - 13.10.2026</p>
+                        <p class="card-text text-muted">💰 Буџет: 25,000 денари (405 €)</p>
+                    </div>
+                    <div class="card-footer bg-white d-flex justify-content-between">
+                        <a href="#trip-details" class="btn btn-sm btn-outline-primary">Детали</a>
+                        <div>
+                            <a href="edit-trip.html" class="btn btn-sm btn-outline-secondary">Уреди</a>
+                            <a href="delete-confirm.html" class="btn btn-sm btn-outline-danger">Избриши</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-5">
+
+        <!-- ДЕТАЛЕН ПРИМЕР за избраното патување -->
+        <div id="trip-details" class="card shadow-sm p-4 bg-white mb-5">
+            <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                <div>
+                    <h3 class="text-primary mb-1">🏛️ Детален план: Летен одмор во Рим</h3>
+                    <p class="text-muted mb-0">Локација: Рим, Италија | Времетраење: 7 дена</p>
+                </div>
+                <div>
+                    <a href="edit-trip.html" class="btn btn-warning me-2">Измени</a>
+                    <a href="delete-confirm.html" class="btn btn-danger">Избриши</a>
+                </div>
+            </div>
+
+            <!-- Итинерар по денови -->
+            <h5 class="fw-bold mb-3">📅 Дневен распоред (Итинерар):</h5>
+            
+            <div class="accordion" id="itineraryAccordion">
+                <!-- Ден 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#day1">
+                            <strong>Ден 1: Пристигнување и Антички Рим</strong>
+                        </button>
+                    </h2>
+                    <div id="day1" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>🏛️ Посета на Колисеум</span>
+                                    <span class="badge bg-info text-dark">10:00 ч. | 16 €</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>🏛️ Разгледување на Римскиот Форум</span>
+                                    <span class="badge bg-info text-dark">14:00 ч. | Вклучено</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ден 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#day2">
+                            <strong>Ден 2: Ватикан и Музеи</strong>
+                        </button>
+                    </h2>
+                    <div id="day2" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>⛪ Базилика Св. Петар</span>
+                                    <span class="badge bg-info text-dark">09:00 ч. | Бесплатно</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
