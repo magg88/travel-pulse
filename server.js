@@ -11,6 +11,7 @@ const apiRoutes = require('./routes/api');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/travelpulse';
+const authRoutes = require('./routes/auth');
 
 // Middleware
 app.use(cors());
@@ -41,6 +42,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Регистрирање на API рутите
 app.use('/api', apiRoutes);
+app.use('/api/auth', authRoutes);
 
 // Почетна рута
 app.get('/', (req, res) => {
