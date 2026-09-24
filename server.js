@@ -45,7 +45,7 @@ const swaggerOptions = {
       version: '1.0.0',
       description: 'Официјална REST API документација'
     },
-    servers: [{ url: `http://localhost:${PORT}` }]
+    servers: [{ url: '/' }] 
   },
   apis: ['./routes/*.js']
 };
@@ -61,12 +61,10 @@ app.use(express.static(distPath));
 
 // Fallback за React Single Page Application (SPA)
 app.use((req, res) => {
-  // Доколку барањето е за API или DB рута што не постои, врати 404 JSON
   if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/db')) {
     return res.status(404).json({ error: 'Бараната API рута не е пронајдена.' });
   }
 
-  // За сите останати веб барања, врати го index.html од фронтендот
   res.sendFile(path.join(distPath, 'index.html'), (err) => {
     if (err) {
       res.status(500).send("Грешка: Прво мора да извршите 'npm run build' во 'frontend' папката.");
@@ -79,7 +77,7 @@ app.use((req, res) => {
 // ==========================================
 app.listen(PORT, () => {
   console.log(`==================================================`);
-  console.log(`🚀 Апликацијата работи на: http://localhost:${PORT}`);
-  console.log(`📄 Swagger UI: http://localhost:${PORT}/api/docs/`);
+  console.log(` Апликацијата работи на: http://localhost:${PORT}`);
+  console.log(` Swagger UI: http://localhost:${PORT}/api/docs/`);
   console.log(`==================================================`);
 });

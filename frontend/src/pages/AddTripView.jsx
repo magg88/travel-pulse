@@ -22,14 +22,19 @@ function AddTripView({ trips, setTrips, setSelectedTripId }) {
     }
   };
 
-  const handleSaveTrip = (e) => {
+  const totalCalculated = (Number(accommodation) || 0) + (Number(food) || 0) + (Number(transport) || 0) + (Number(attractions) || 0);
+
+  const handleSaveTrip = async (e) => {
     e.preventDefault();
     if (!title || !location) return;
 
+    // Подготовка на објектот за патување
     const newTrip = {
-      id: Date.now(),
       title,
+      destination: location,
       location,
+      startDate: dateFrom || new Date().toISOString(),
+      endDate: dateTo || new Date().toISOString(),
       dates: dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Недефинирано',
       img: imagePreview || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600',
       budget: {
@@ -40,12 +45,41 @@ function AddTripView({ trips, setTrips, setSelectedTripId }) {
       }
     };
 
-    setTrips([newTrip, ...trips]);
-    setSelectedTripId(newTrip.id);
-    navigate('/weather-currency');
-  };
+    let savedTrip = { ...newTrip, id: Date.now() };
 
-  const totalCalculated = (Number(accommodation) || 0) + (Number(food) || 0) + (Number(transport) || 0) + (Number(attractions) || 0);
+    try {
+      // 1. Испрати во MongoDB преку бекенд рутата
+      const response = await fetch('/api/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTrip.title,
+          destination: newTrip.destination,
+          startDate: newTrip.startDate,
+          endDate: newTrip.endDate,
+          budget: totalCalculated
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        savedTrip = { ...newTrip, ...data };
+      }
+    } catch (err) {
+      console.warn('Нема врска со базата, зачувувам локално:', err);
+    }
+
+    // 2. Ажурирај ги состојбите во React и LocalStorage (заштита при рефреш)
+    const updatedTrips = [savedTrip, ...trips];
+    setTrips(updatedTrips);
+    localStorage.setItem('myTrips', JSON.stringify(updatedTrips));
+
+    // 3. Постави го избраното патување и навигирај
+    if (setSelectedTripId) {
+      setSelectedTripId(savedTrip._id || savedTrip.id);
+    }
+    navigate('/my-trips');
+  };
 
   return (
     <>
@@ -154,8 +188,8 @@ function AddTripView({ trips, setTrips, setSelectedTripId }) {
           </div>
 
           <div className="form-actions">
-            <Link to="/trips" className="btn-cancel">Откажи</Link>
-            <button type="submit" className="btn-submit-green">Зачувај и Прикажи График</button>
+            <Link to="/my-trips" className="btn-cancel">Откажи</Link>
+            <button type="submit" className="btn-submit-green">Зачувај Патување</button>
           </div>
         </form>
       </div>

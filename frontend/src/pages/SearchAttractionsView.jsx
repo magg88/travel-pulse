@@ -83,26 +83,48 @@ function SearchAttractionsView() {
               Не се пронајдени атракции за избраните критериуми.
             </p>
           ) : (
-            attractions.map((item) => (
-              <div key={item._id || item.id} className="card" style={{ cursor: 'default' }}>
-                <div className="card-body" style={{ textAlign: 'left' }}>
-                  <span className={`category-badge ${getCategoryBg(item.category)}`}>
-                    {item.category || 'Атракција'}
-                  </span>
-                  <h3 className="card-title">{item.name || item.title}</h3>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '10px' }}>
-                    {item.city || item.location}
+            attractions.map((item) => {
+              // 1. ЧИСТА ПРОВЕРКА: Го претвораме во број. Ако е било каков текст, станува NaN (невалиден број)
+              const numPrice = Number(item.price);
+              const isValidNumber = !isNaN(numPrice) && numPrice > 0;
+
+              // 2. ФОРМАТИРАЊЕ: Прикажува само валиден број или "Бесплатно"
+              let priceDisplay = 'Бесплатно';
+              if (isValidNumber) {
+                priceDisplay = `${numPrice} ${item.currency || 'EUR'}`;
+              }
+
+              return (
+                <div key={item._id || item.id} className="card" style={{ cursor: 'default' }}>
+                  <div className="card-body" style={{ textAlign: 'left' }}>
+                    <span className={`category-badge ${getCategoryBg(item.category)}`}>
+                      {item.category || 'Атракција'}
+                    </span>
+                    <h3 className="card-title">{item.name || item.title}</h3>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '10px' }}>
+                      {item.city || item.location}
+                    </div>
+                    <p style={{ fontSize: '0.82rem', color: '#64748b', flex: 1 }}>
+                      {item.description || item.desc}
+                    </p>
+
+                    {/* ✅ ЦЕНА: Загарантирано нема да излезе текст од details */}
+                    <div className="price-text">
+                      Цена: {priceDisplay}
+                    </div>
+
+                    {/* ✅ ДЕТАЛИ: Одвоени во посебен простор доколку постојат */}
+                    {item.details && (
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', marginBottom: '8px' }}>
+                        {item.details}
+                      </div>
+                    )}
+
+                    <button className="btn-outline-itinerary">+ Додади во итинерар</button>
                   </div>
-                  <p style={{ fontSize: '0.82rem', color: '#64748b', flex: 1 }}>
-                    {item.description || item.desc}
-                  </p>
-                  <div className="price-text">
-                    Цена: {item.details || item.price || 'Бесплатно'}
-                  </div>
-                  <button className="btn-outline-itinerary">+ Додади во итинерар</button>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

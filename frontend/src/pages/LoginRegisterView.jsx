@@ -14,6 +14,13 @@ function LoginRegisterView({ setUser }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+
+    // Валидација за должина на лозинка
+    if (password.length < 6) {
+      setErrorMsg('Лозинката мора да содржи најмалку 6 карактери.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -34,13 +41,17 @@ function LoginRegisterView({ setUser }) {
         setUser(loggedUser);
         navigate('/');
       } else {
-        // Повик за регистрација - ги испраќаме и `username` и `name` за MongoDB
+        // Повик за регистрација
         const response = await registerUser({ 
           username: name, 
           name: name, 
           email: email, 
           password: password 
         });
+
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
 
         const newUser = response.data.user || {
           name: name,
@@ -55,8 +66,8 @@ function LoginRegisterView({ setUser }) {
     } catch (err) {
       console.error('Грешка при автентикација:', err);
       setErrorMsg(
-        err.response?.data?.message || 
         err.response?.data?.error || 
+        err.response?.data?.message || 
         'Неуспешна регистрација/најава. Проверете ги податоците.'
       );
     } finally {
@@ -144,7 +155,7 @@ function LoginRegisterView({ setUser }) {
             <input
               type="password"
               className="form-control"
-              placeholder="••••••••"
+              placeholder="•••••••• (минимум 6 карактери)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

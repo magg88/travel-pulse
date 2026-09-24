@@ -8,7 +8,16 @@ const Attraction = require('../models/Attraction');
 const Review = require('../models/Review');
 const Expense = require('../models/Expense');
 
-// DELETE /db - Бришење на СИТЕ податоци
+/**
+ * @swagger
+ * /db:
+ *   delete:
+ *     summary: Бришење на сите податоци од базата (Бришење на сите колекции)
+ *     tags: [Database Management]
+ *     responses:
+ *       200:
+ *         description: Базата е успешно испразнета
+ */
 router.delete('/', async (req, res) => {
     try {
         await User.deleteMany({});
@@ -23,24 +32,30 @@ router.delete('/', async (req, res) => {
     }
 });
 
-// POST /db - Внесување иницијални податоци (Seed)
+/**
+ * @swagger
+ * /db:
+ *   post:
+ *     summary: Внесување иницијални тест-податоци (Seed Database)
+ *     tags: [Database Management]
+ *     responses:
+ *       200:
+ *         description: Базата е успешно наполнета со тест податоци
+ */
 router.post('/', async (req, res) => {
     try {
-        // Бришење на старите податоци за чист почеток
         await User.deleteMany({});
         await Trip.deleteMany({});
         await Attraction.deleteMany({});
         await Review.deleteMany({});
         await Expense.deleteMany({});
 
-        // 1. Корисници
         const salt = await bcrypt.genSalt(10);
         const pass = await bcrypt.hash('123456', salt);
 
         const admin = await User.create({ username: 'Admin', email: 'admin@travel.com', password: pass, role: 'admin' });
         const user1 = await User.create({ username: 'Marko', email: 'marko@travel.com', password: pass, role: 'editor' });
 
-        // 2. Атракции
         const att1 = await Attraction.create({
             name: 'Колисеум',
             city: 'Рим',
@@ -57,7 +72,6 @@ router.post('/', async (req, res) => {
             details: '🗼 Изградена во 1889 година.'
         });
 
-        // 3. Патувања
         const trip1 = await Trip.create({
             title: 'Пролет во Рим',
             destination: 'Рим',
@@ -67,7 +81,6 @@ router.post('/', async (req, res) => {
             user: user1._id
         });
 
-        // 4. Оценки/Рецензии (Зависни од User и Attraction)
         await Review.create({
             rating: 5,
             comment: 'Неверојатно искуство, вреди да се посети!',
@@ -75,7 +88,6 @@ router.post('/', async (req, res) => {
             attraction: att1._id
         });
 
-        // 5. Трошоци (Зависни од Trip)
         await Expense.create({
             title: 'Авионски карти',
             amount: 120,
