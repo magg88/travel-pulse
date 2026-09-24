@@ -1,0 +1,101 @@
+/* ==========================================
+   УНИФИЦИРАНА НАВИГАЦИЈА (100% Ист Стил)
+   ========================================== */
+
+.navbar-pastel {
+    background: linear-gradient(135deg, #6c5ce7 0%, #81acec 50%, #74b9ff 100%) !important;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.15);
+}
+
+.navbar-pastel .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #ffffff !important;
+    font-size: 1.35rem;
+}
+
+/* Централно порамнување за сите контејнери во навигацијата */
+.navbar-pastel .navbar-nav,
+.navbar-pastel .d-flex,
+#user-info {
+    align-items: center !important;
+}
+
+/* 1. ГЕНЕРАЛЕН РЕСЕТ: Сите линкови и копчиња добиваат ИДЕНТИЧНА димензија и фонт */
+.navbar-pastel .nav-link,
+.navbar-pastel .btn,
+.navbar-pastel .btn-outline-light,
+.navbar-pastel .btn-light,
+.navbar-pastel #user-info a,
+.navbar-pastel #user-info button {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    padding: 0.45rem 0.95rem !important;
+    border-radius: 20px !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    transition: all 0.2s ease-in-out !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    margin: 2px !important;
+    box-shadow: none !important;
+}
+
+/* 2. ИДЕНТИЧЕН HOVER ЕФЕКТ ЗА СИТЕ ОПЦИИ */
+.navbar-pastel .nav-link:hover,
+.navbar-pastel .btn:hover,
+.navbar-pastel .btn-outline-light:hover,
+.navbar-pastel #user-info button:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.28) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 3. АКТИВНА СТРАНИЦА (Бела пилула за онаа опција каде што се наоѓа корисникот) */
+.navbar-pastel .nav-link.active {
+    color: #6c5ce7 !important;
+    background-color: #ffffff !important;
+    border-color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 4. СПЕЦИЈАЛНО КОПЧЕ ЗА НАЈАВА / ОДЈАВА (Со поизразен бел стил) */
+.navbar-pastel .btn-light {
+    background-color: #ffffff !important;
+    color: #6c5ce7 !important;
+    border-color: #ffffff !important;
+}
+
+.navbar-pastel .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #5142be !important;
+}
+
+/* Текст за корисничко име */
+.navbar-pastel #user-info span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Мобилен приказ */
+@media (max-width: 991px) {
+    .navbar-pastel .navbar-nav {
+        padding-top: 0.8rem;
+        align-items: stretch !important;
+    }
+    
+    .navbar-pastel .nav-link,
+    .navbar-pastel .btn {
+        justify-content: flex-start !important;
+        width: 100%;
+        margin-bottom: 4px !important;
+    }
+}

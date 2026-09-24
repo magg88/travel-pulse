@@ -1,75 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-const User = require('../models/User');
 const Trip = require('../models/Trip');
-const ItineraryItem = require('../models/ItineraryItem');
 const Attraction = require('../models/Attraction');
-const DestinationInfo = require('../models/DestinationInfo');
-
-/**
- * @swagger
- * /api/db/seed:
- *   get:
- *     summary: Ресетирање и полнење на базата со тест податоци
- *     tags: [Database]
- *     responses:
- *       200:
- *         description: Базата е успешно ресетирана и наполнета
- */
-router.get('/db/seed', async (req, res) => {
-    try {
-        await User.deleteMany({});
-        await Trip.deleteMany({});
-        await ItineraryItem.deleteMany({});
-        await Attraction.deleteMany({});
-        await DestinationInfo.deleteMany({});
-
-        const user = await User.create({
-            username: 'admin',
-            email: 'admin@travelpulse.mk',
-            password: 'password123',
-            role: 'admin'
-        });
-
-        const trip = await Trip.create({
-            title: 'Патување во Рим',
-            destination: 'Рим, Италија',
-            startDate: new Date('2026-05-10'),
-            endDate: new Date('2026-05-15'),
-            budget: 600,
-            user: user._id
-        });
-
-        await ItineraryItem.create({
-            trip: trip._id,
-            dayNumber: 1,
-            title: 'Посета на Колисеум',
-            time: '10:00',
-            notes: 'Купени се билети онлајн'
-        });
-
-        await Attraction.create({
-            name: 'Колисеум',
-            city: 'Рим',
-            category: 'historical',
-            description: 'Антички амфитеатар',
-            price: 16
-        });
-
-        await DestinationInfo.create({
-            cityName: 'Рим',
-            country: 'Италија',
-            currencyCode: 'EUR',
-            exchangeRateToMKD: 61.5,
-            avgTemperature: 24
-        });
-
-        res.json({ message: 'Базата е успешно наполнета со иницијални податоци!' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 /**
  * @swagger
@@ -170,23 +103,69 @@ router.delete('/trips/:id', async (req, res) => {
     }
 });
 
-/**
- * @swagger
- * /api/attractions:
- *   get:
- *     summary: Земање на сите атракции
- *     tags: [Attractions]
- *     responses:
- *       200:
- *         description: Листа на атракции
- */
-router.get('/attractions', async (req, res) => {
+// Допонителна логика за филтрирање
+const fetchAttractions = async (req, res) => {
     try {
-        const attractions = await Attraction.find();
+        const { q, search, city, category } = req.query;
+        const searchTerm = q || search || city || '';
+
+        let conditions = [];
+
+        // Филтер за Град или Име
+        if (searchTerm) {
+            conditions.push({
+                $or: [
+                    { name: { $regex: searchTerm, $options: 'i' } },
+                    { city: { $regex: searchTerm, $options: 'i' } }
+                ]
+            });
+        }
+
+        // Филтер за Категорија
+        if (category && category !== 'Сите' && category !== 'all' && category !== '') {
+            conditions.push({
+                category: { $regex: category, $options: 'i' }
+            });
+        }
+
+        const filter = conditions.length > 0 ? { $and: conditions } : {};
+
+        const attractions = await Attraction.find(filter);
         res.json(attractions);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-});
+};
+
+/**
+ * @swagger
+ * /api/attractions/search:
+ *   get:
+ *     summary: Пребарување атракции според име, град или категорија
+ *     tags: [Attractions]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *       - in: query
+ *         name: category
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Филтрирана листа на атракции
+ */
+router.get('/attractions/search', fetchAttractions);
+
+/**
+ * @swagger
+ * /api/attractions:
+ *   get:
+ *     summary: Земање на сите атракции (поддржува query параметри ?q= &category=)
+ *     tags: [Attractions]
+ *     responses:
+ *       200:
+ *         description: Листа на сите атракции
+ */
+router.get('/attractions', fetchAttractions);
 
 module.exports = router;

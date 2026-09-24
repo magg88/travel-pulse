@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelPulse - Почетна</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Навигација (Динамички се пополнува преку app.js) -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-pastel shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="index.html">
+                <span>✈️</span> TravelPulse
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Тука app.js ги става линковите во зависност дали е најавен корисникот -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="main-nav"></ul>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/api-docs" target="_blank" class="btn btn-sm btn-outline-light rounded-3">Swagger API</a>
+                    <div id="user-info" class="text-white d-flex align-items-center gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Главна Hero Секција -->
+    <header class="hero-section text-white text-center py-5" style="background: linear-gradient(135deg, #7F7FD5 0%, #86A8E7 50%, #91EAE4 100%);">
+        <div class="container py-5">
+            <h1 class="display-4 fw-bold mb-3">Планирај ги твоите незаборавни авантури 🌸</h1>
+            <p class="lead mb-4 opacity-90 fs-5">Истражувај топ атракции, организирај сопствени патувања и следи го твојот буџет со TravelPulse.</p>
+            
+            <!-- Копчиња за Hero секцијата (app.js автоматски ги менува според статус на најава) -->
+            <div id="hero-buttons" class="d-flex justify-content-center gap-3 mt-4">
+                <a href="add-trip.html" class="btn btn-light rounded-pill px-4 py-2 fw-semibold shadow-sm">Креирај патување</a>
+                <a href="login-register.html" class="btn btn-outline-light rounded-pill px-4 py-2 fw-semibold">Најава / Регистрација</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Главна Содржина / Популарни Дестинации -->
+    <main class="container my-5">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <h3 class="fw-bold text-dark m-0">🌼 Популарни Предлог Дестинации</h3>
+            <span class="text-muted small">(Кликнете на картичка за детали)</span>
+        </div>
+
+        <!-- Контејнер каде што JavaScript ги вчитува дестинациите од базата/API -->
+        <div class="row g-4" id="home-attractions-container">
+            
+            <!-- Статички картички за приказ (Доколку базата е празна или се вчитува) -->
+            <div class="col-md-3">
+                <div class="card card-pastel h-100 border-0 shadow-sm rounded-4 overflow-hidden" onclick="openAttractionModal(0)" style="cursor: pointer;">
+                    <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=500" class="card-img-top" alt="Рим, Италија" style="height: 180px; object-fit: cover;">
+                    <div class="card-body text-center p-3">
+                        <h5 class="fw-bold mb-1">Рим, Италија</h5>
+                        <p class="text-muted small mb-3 text-truncate">Вечниот град, Колисеумот и италијанската кујна.</p>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">Препорачано</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-pastel h-100 border-0 shadow-sm rounded-4 overflow-hidden" onclick="openAttractionModal(1)" style="cursor: pointer;">
+                    <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500" class="card-img-top" alt="Париз, Франција" style="height: 180px; object-fit: cover;">
+                    <div class="card-body text-center p-3">
+                        <h5 class="fw-bold mb-1">Париз, Франција</h5>
+                        <p class="text-muted small mb-3 text-truncate">Град на светлината, уметноста и Ајфеловата кула.</p>
+                        <span class="badge bg-info-subtle text-info rounded-pill px-3 py-2">Популарно</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-pastel h-100 border-0 shadow-sm rounded-4 overflow-hidden" onclick="openAttractionModal(2)" style="cursor: pointer;">
+                    <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=500" class="card-img-top" alt="Атина, Грција" style="height: 180px; object-fit: cover;">
+                    <div class="card-body text-center p-3">
+                        <h5 class="fw-bold mb-1">Атина, Грција</h5>
+                        <p class="text-muted small mb-3 text-truncate">Акропол, античка историја и прекрасни плажи.</p>
+                        <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-2">Топ избор</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-pastel h-100 border-0 shadow-sm rounded-4 overflow-hidden" onclick="openAttractionModal(3)" style="cursor: pointer;">
+                    <img src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=500" class="card-img-top" alt="Мадрид, Шпанија" style="height: 180px; object-fit: cover;">
+                    <div class="card-body text-center p-3">
+                        <h5 class="fw-bold mb-1">Мадрид, Шпанија</h5>
+                        <p class="text-muted small mb-3 text-truncate">Култура, уметнички музеи и прекрасни паркови.</p>
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">Атрактивно</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal за детали за дестинацијата -->
+    <div class="modal fade" id="attractionModal" tabindex="-1" aria-labelledby="attractionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title fw-bold text-dark" id="modalTitle"></h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <img id="modalImg" src="" class="img-fluid rounded-4 mb-3 w-100" style="max-height: 320px; object-fit: cover;" alt="">
+                    
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span id="modalBadge" class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fs-6"></span>
+                        <span id="modalCity" class="text-muted fw-semibold"></span>
+                    </div>
+
+                    <h6 class="fw-bold text-dark mb-2">Опис:</h6>
+                    <p id="modalDescription" class="text-secondary fs-6 mb-4"></p>
+
+                    <div class="p-3 bg-light rounded-3 border">
+                        <h6 class="fw-bold text-dark mb-2">💡 Клучни информации и совети:</h6>
+                        <div id="modalDetails" class="small text-muted" style="line-height: 1.7;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Затвори</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer class="bg-light text-center text-muted py-4 mt-5 border-top">
+        <div class="container">
+            <p class="mb-0">© 2026 TravelPulse - Сите права се задржани.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
