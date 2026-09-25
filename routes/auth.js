@@ -2,21 +2,13 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'travelpulse_jwt_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_jwt_key_here';
 
-// Нагодување на nodemailer
-const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-        user: 'test.user@ethereal.email',
-        pass: 'testpass'
-    }
-});
-
+// ==========================================
+// 1. РЕГИСТРАЦИЈА НА КОРИСНИК
+// ==========================================
 /**
  * @swagger
  * /api/auth/register:
@@ -29,51 +21,30 @@ const transporter = nodemailer.createTransport({
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
  *             properties:
- *               username:
- *                 type: string
- *                 example: majap
- *               name:
- *                 type: string
- *                 example: Маја Петровска
- *               email:
- *                 type: string
- *                 example: maja@example.com
- *               password:
- *                 type: string
- *                 example: lozinka123
+ *               username: { type: string, example: "petar123" }
+ *               email: { type: string, example: "petar@example.com" }
+ *               password: { type: string, example: "tajna123" }
+ *               role: { type: string, example: "viewer" }
  *     responses:
  *       201:
- *         description: Успешна регистрација
- *       400:
- *         description: Грешка во внесените податоци
+ *         description: Успешно регистриран корисник
  */
 router.post('/register', async (req, res) => {
     try {
-        const { email, password, role } = req.body;
-        const username = req.body.username || req.body.name;
+        const { username, email, password, role } = req.body;
 
-        if (!username || !email || !password) {
-            return res.status(400).json({ error: 'Сите полиња се задолжителни.' });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'Лозинката мора да содржи најмалку 6 карактери.' });
-        }
-
-        // Проверка дали корисничкото име или е-поштата веќе постојат
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        // 1. Проверка дали корисникот или email-от веќе постојат
+        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
-            return res.status(400).json({ error: 'Корисничкото име или е-поштата веќе постојат.' });
+            return res.status(400).json({ error: 'Корисничкото име или email веќе се заземени.' });
         }
 
-        // Хеширање на лозинката
+        // 2. Хеширање на лозинката
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // 3. Креирање на новиот корисник (со default улога 'viewer' доколку не е пратена)
         const newUser = new User({
             username,
             email,
@@ -81,43 +52,38 @@ router.post('/register', async (req, res) => {
             role: role || 'viewer'
         });
 
-        await newUser.save();
+        const savedUser = await newUser.save();
 
-        // Испраќање е-пошта во позадина (не-блокирачко)
-        try {
-            transporter.sendMail({
-                from: '"Travel Planner" <no-reply@travelplanner.com>',
-                to: email,
-                subject: 'Успешна регистрација!',
-                text: `Здраво ${username}, добродојдовте на Travel Planner!`
-            });
-        } catch (mailErr) {
-            console.log('Грешка при праќање е-пошта (занемарено):', mailErr.message);
-        }
-
-        // Генерирање JWT токен
+        // 4. Генерирање на JWT токен
         const token = jwt.sign(
-            { id: newUser._id, username: newUser.username, role: newUser.role },
+            { id: savedUser._id, role: savedUser.role },
             JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '1d' }
         );
 
         res.status(201).json({
-            message: 'Регистрацијата е успешна!',
+            message: 'Успешна регистрација!',
             token,
-            user: { id: newUser._id, username: newUser.username, email: newUser.email, role: newUser.role }
+            user: {
+                id: savedUser._id,
+                username: savedUser.username,
+                email: savedUser.email,
+                role: savedUser.role
+            }
         });
     } catch (err) {
-        console.error('Грешка при регистрација:', err);
-        res.status(500).json({ error: err.message || 'Серверска грешка при регистрација.' });
+        res.status(500).json({ error: err.message });
     }
 });
 
+// ==========================================
+// 2. НАЈАВА НА КОРИСНИК (LOGIN)
+// ==========================================
 /**
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Најава на постоечки корисник
+ *     summary: Најава на корисник
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -125,52 +91,82 @@ router.post('/register', async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
  *             properties:
- *               email:
- *                 type: string
- *                 example: maja@example.com
- *               password:
- *                 type: string
- *                 example: lozinka123
+ *               username: { type: string, example: "petar123" }
+ *               password: { type: string, example: "tajna123" }
  *     responses:
  *       200:
- *         description: Успешна најава и добивање JWT токен
- *       400:
- *         description: Невалидна е-пошта или лозинка
+ *         description: Успешна најава со вратен JWT токен и податоци за корисникот
  */
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { username, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Внесете е-пошта и лозинка.' });
-        }
-
-        const user = await User.findOne({ email });
+        // 1. Проверка дали постои корисникот
+        const user = await User.findOne({ username });
         if (!user) {
-            return res.status(400).json({ error: 'Невалидна е-пошта или лозинка.' });
+            return res.status(400).json({ error: 'Непостоечко корисничко име или погрешна лозинка.' });
         }
 
+        // 2. Споредба на лозинката
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ error: 'Невалидна е-пошта или лозинка.' });
+            return res.status(400).json({ error: 'Непостоечко корисничко име или погрешна лозинка.' });
         }
 
+        // 3. Генерирање на JWT токен
         const token = jwt.sign(
-            { id: user._id, username: user.username, role: user.role },
+            { id: user._id, role: user.role },
             JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '1d' }
         );
 
+        // 4. Враќање на токенот и податоците за корисникот (без лозинката)
         res.json({
+            message: 'Успешна најава!',
             token,
-            user: { id: user._id, username: user.username, role: user.role, email: user.email }
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// 3. ЗЕМАЊЕ НА АКТУЕЛЕН КОРИСНИК (ME)
+// ==========================================
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Земање на информации за моментално најавениот корисник
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Податоци за корисникот
+ */
+router.get('/me', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'Нема доставено токен за автентикација.' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await User.findById(decoded.id).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({ error: 'Корисникот не е пронајден.' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        res.status(401).json({ error: 'Невалиден или истечен токен.' });
     }
 });
 

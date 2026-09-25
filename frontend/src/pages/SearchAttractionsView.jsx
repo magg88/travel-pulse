@@ -1,21 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { searchAttractions } from '../api';
+import { fetchAttractions } from '../api';
 
 function SearchAttractionsView() {
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('Сите категории');
-  const [attractions, setAttractions] = useState([]);
+  const [allAttractions, setAllAttractions] = useState([]);
+  const [displayedAttractions, setDisplayedAttractions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Функција за пребарување атракции од MongoDB
-  const handleSearch = async (e) => {
-    if (e) e.preventDefault();
+  // 1. Почетно вчитување на сите атракции
+  const loadAttractions = async () => {
     setLoading(true);
-
     try {
-      const selectedCategory = category === 'Сите категории' ? '' : category;
-      const response = await searchAttractions(city, selectedCategory);
-      setAttractions(response.data || []);
+      const response = await fetchAttractions();
+      
+      const rawData = response.data || response;
+      let items = [];
+      if (Array.isArray(rawData)) {
+        items = rawData;
+      } else if (rawData.data && Array.isArray(rawData.data)) {
+        items = rawData.data;
+      } else if (rawData.attractions && Array.isArray(rawData.attractions)) {
+        items = rawData.attractions;
+      }
+
+      setAllAttractions(items);
+      setDisplayedAttractions(items);
     } catch (err) {
       console.error('Грешка при влечење на атракции:', err);
     } finally {
@@ -23,18 +33,63 @@ function SearchAttractionsView() {
     }
   };
 
-  // Првично вчитај ги сите атракции од базата
   useEffect(() => {
-    handleSearch();
+    loadAttractions();
   }, []);
 
-  // Помошна функција за класа за боја на категоријата
+  // 2. Функција за филтрирање
+  const applyFilters = (searchCity, searchCategory, dataList = allAttractions) => {
+    let filtered = [...dataList];
+
+    // Филтер за град / дестинација
+    if (searchCity && searchCity.trim() !== '') {
+      const query = searchCity.toLowerCase().trim();
+      filtered = filtered.filter(item => {
+        const c = (item.city || '').toLowerCase();
+        const l = (item.location || '').toLowerCase();
+        const n = (item.name || item.title || '').toLowerCase();
+        return c.includes(query) || l.includes(query) || n.includes(query);
+      });
+    }
+
+    // Филтер за категорија
+    if (searchCategory && searchCategory !== 'Сите категории') {
+      const queryCat = searchCategory.toLowerCase().trim();
+      filtered = filtered.filter(item => {
+        const cat = (item.category || '').toLowerCase().trim();
+        return cat.includes(queryCat);
+      });
+    }
+
+    setDisplayedAttractions(filtered);
+  };
+
+  // Промена во полето за град
+  const handleCityChange = (e) => {
+    const val = e.target.value;
+    setCity(val);
+    applyFilters(val, category);
+  };
+
+  // Промена во паѓачкото мени за категорија
+  const handleCategoryChange = (e) => {
+    const val = e.target.value;
+    setCategory(val);
+    applyFilters(city, val);
+  };
+
+  // При клик на копчето „Пребарај“
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
+    applyFilters(city, category);
+  };
+
   const getCategoryBg = (cat) => {
     if (!cat) return 'bg-yellow';
     const lower = cat.toLowerCase();
-    if (lower.includes('музеј')) return 'bg-yellow';
-    if (lower.includes('историја')) return 'bg-red';
     if (lower.includes('природа')) return 'bg-green';
+    if (lower.includes('авантура')) return 'bg-yellow';
+    if (lower.includes('историја')) return 'bg-red';
     return 'bg-yellow';
   };
 
@@ -52,9 +107,9 @@ function SearchAttractionsView() {
             <input 
               type="text" 
               className="form-control" 
-              placeholder="пр. Рим, Париз, Барселона..." 
+              placeholder="пр. Рим, Скопје..." 
               value={city}
-              onChange={(e) => setCity(e.target.value)}
+              onChange={handleCityChange}
             />
           </div>
 
@@ -63,32 +118,30 @@ function SearchAttractionsView() {
             <select 
               className="form-control"
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={handleCategoryChange}
             >
               <option value="Сите категории">Сите категории</option>
-              <option value="Музеј">Музеј</option>
-              <option value="Историја">Историја</option>
               <option value="Природа">Природа</option>
+              <option value="Авантура">Авантура</option>
+              <option value="Историја">Историја</option>
             </select>
           </div>
 
           <button type="submit" className="btn-search-blue">
-            {loading ? 'Се пребарува...' : 'Пребарај'}
+            {loading ? 'Се вчитува...' : 'Пребарај'}
           </button>
         </form>
 
         <div className="cards-grid">
-          {attractions.length === 0 && !loading ? (
+          {displayedAttractions.length === 0 && !loading ? (
             <p style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '20px', color: '#64748b' }}>
               Не се пронајдени атракции за избраните критериуми.
             </p>
           ) : (
-            attractions.map((item) => {
-              // 1. ЧИСТА ПРОВЕРКА: Го претвораме во број. Ако е било каков текст, станува NaN (невалиден број)
+            displayedAttractions.map((item) => {
               const numPrice = Number(item.price);
               const isValidNumber = !isNaN(numPrice) && numPrice > 0;
 
-              // 2. ФОРМАТИРАЊЕ: Прикажува само валиден број или "Бесплатно"
               let priceDisplay = 'Бесплатно';
               if (isValidNumber) {
                 priceDisplay = `${numPrice} ${item.currency || 'EUR'}`;
@@ -108,19 +161,15 @@ function SearchAttractionsView() {
                       {item.description || item.desc}
                     </p>
 
-                    {/* ✅ ЦЕНА: Загарантирано нема да излезе текст од details */}
                     <div className="price-text">
                       Цена: {priceDisplay}
                     </div>
 
-                    {/* ✅ ДЕТАЛИ: Одвоени во посебен простор доколку постојат */}
                     {item.details && (
                       <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', marginBottom: '8px' }}>
                         {item.details}
                       </div>
                     )}
-
-                    <button className="btn-outline-itinerary">+ Додади во итинерар</button>
                   </div>
                 </div>
               );

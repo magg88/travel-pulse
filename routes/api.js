@@ -3,24 +3,30 @@ const router = express.Router();
 
 const Trip = require('../models/Trip');
 const Attraction = require('../models/Attraction');
+const mongoose = require('mongoose');
+
+// Модели за дополнителните колекции (со заштита ако веќе постојат)
+const Review = mongoose.models.Review || mongoose.model('Review', new mongoose.Schema({}, { strict: false }));
+const Expense = mongoose.models.Expense || mongoose.model('Expense', new mongoose.Schema({}, { strict: false }));
+const DestinationInfo = mongoose.models.DestinationInfo || mongoose.model('DestinationInfo', new mongoose.Schema({}, { strict: false }));
 
 // ==========================================
-// TRIPS RUTI
+// 1. TRIPS RUTI
 // ==========================================
 
 /**
  * @swagger
  * /api/trips:
  *   get:
- *     summary: Zemanje na site patuvanja
+ *     summary: Земање на сите патувања
  *     tags: [Trips]
  *     responses:
  *       200:
- *         description: Lista na site patuvanja
+ *         description: Листа на патувања
  */
 router.get('/trips', async (req, res) => {
     try {
-        const trips = await Trip.find().populate('user', 'username email');
+        const trips = await Trip.find();
         res.json(trips);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -31,7 +37,7 @@ router.get('/trips', async (req, res) => {
  * @swagger
  * /api/trips:
  *   post:
- *     summary: Kreiranje na novo patuvanje
+ *     summary: Додај ново патување
  *     tags: [Trips]
  *     requestBody:
  *       required: true
@@ -40,14 +46,12 @@ router.get('/trips', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               title: { type: string }
- *               destination: { type: string }
- *               startDate: { type: string }
- *               endDate: { type: string }
- *               budget: { type: number }
+ *               title: { type: string, example: "Викенд во Рим" }
+ *               destination: { type: string, example: "Рим" }
+ *               budget: { type: number, example: 500 }
  *     responses:
  *       201:
- *         description: Patuvanjeto e uspesno kreirano
+ *         description: Успешно креирано патување
  */
 router.post('/trips', async (req, res) => {
     try {
@@ -59,125 +63,34 @@ router.post('/trips', async (req, res) => {
     }
 });
 
-/**
- * @swagger
- * /api/trips/{id}:
- *   put:
- *     summary: Izmena na patuvanje
- *     tags: [Trips]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Izmeneto patuvanje
- */
-router.put('/trips/:id', async (req, res) => {
-    try {
-        const updatedTrip = await Trip.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(updatedTrip);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-
-/**
- * @swagger
- * /api/trips/{id}:
- *   delete:
- *     summary: Brishenje na patuvanje
- *     tags: [Trips]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Uspesno izbrisano patuvanje
- */
-router.delete('/trips/:id', async (req, res) => {
-    try {
-        await Trip.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Patuvanjeto e uspesno izbrisano' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // ==========================================
-// ATTRACTIONS RUTI
+// 2. ATTRACTIONS RUTI
 // ==========================================
-
-const fetchAttractions = async (req, res) => {
-    try {
-        const { q, search, city, category } = req.query;
-        const searchTerm = q || search || city || '';
-
-        let conditions = [];
-
-        if (searchTerm) {
-            conditions.push({
-                $or: [
-                    { name: { $regex: searchTerm, $options: 'i' } },
-                    { city: { $regex: searchTerm, $options: 'i' } }
-                ]
-            });
-        }
-
-        if (category && category !== 'Site' && category !== 'all' && category !== '') {
-            conditions.push({
-                category: { $regex: category, $options: 'i' }
-            });
-        }
-
-        const filter = conditions.length > 0 ? { $and: conditions } : {};
-
-        const attractions = await Attraction.find(filter);
-        res.json(attractions);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-/**
- * @swagger
- * /api/attractions/search:
- *   get:
- *     summary: Prebaruvanje atrakcii spored ime, grad ili kategorija
- *     tags: [Attractions]
- *     parameters:
- *       - in: query
- *         name: q
- *         schema: { type: string }
- *       - in: query
- *         name: category
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Filtrirana lista na atrakcii
- */
-router.get('/attractions/search', fetchAttractions);
 
 /**
  * @swagger
  * /api/attractions:
  *   get:
- *     summary: Zemanje na site atrakcii (poddrzuva query parametri ?q= &category=)
+ *     summary: Земање на сите атракции
  *     tags: [Attractions]
  *     responses:
  *       200:
- *         description: Lista na site atrakcii
+ *         description: Листа на атракции
  */
-router.get('/attractions', fetchAttractions);
+router.get('/attractions', async (req, res) => {
+    try {
+        const attractions = await Attraction.find();
+        res.json(attractions);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 /**
  * @swagger
  * /api/attractions:
  *   post:
- *     summary: Kreiranje ili azuriranje na atrakcija (sprecuva duplikati)
+ *     summary: Додај нова атракција
  *     tags: [Attractions]
  *     requestBody:
  *       required: true
@@ -185,66 +98,54 @@ router.get('/attractions', fetchAttractions);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - city
  *             properties:
- *               name:
- *                 type: string
- *                 example: Tandem paraglajding od Galicica
- *               city:
- *                 type: string
- *                 example: Ohrid
- *               category:
- *                 type: string
- *                 example: Avantura
- *               description:
- *                 type: string
- *                 example: Vozbudliv let so paraglajder so sletuvanje do ezeroto.
- *               details:
- *                 type: string
- *                 example: 🪂 Vklucuva oprema, instruktor i snimka.
- *               price:
- *                 type: number
- *                 example: 70
- *               currency:
- *                 type: string
- *                 example: EUR
+ *               name: { type: string, example: "Колосеум" }
+ *               city: { type: string, example: "Рим" }
+ *               category: { type: string, example: "Историја" }
+ *               price: { type: number, example: 18 }
  *     responses:
- *       200:
- *         description: Atrakcijata e uspesno azurirana ili kreirana
+ *       201:
+ *         description: Успешно креирана атракција
  */
 router.post('/attractions', async (req, res) => {
     try {
-        const { name, city } = req.body;
-
-        if (!name || !city) {
-            return res.status(400).json({ error: 'Imeto i gradot se zadolzitelni.' });
-        }
-
-        const attraction = await Attraction.findOneAndUpdate(
-            { name: name.trim(), city: city.trim() },
-            req.body,
-            { new: true, upsert: true, runValidators: true }
-        );
-
-        res.status(200).json(attraction);
+        const attraction = new Attraction(req.body);
+        const saved = await attraction.save();
+        res.status(201).json(saved);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
 
+// ==========================================
+// 3. REVIEWS RUTI
+// ==========================================
+
 /**
  * @swagger
- * /api/attractions/{id}:
- *   put:
- *     summary: Izmena na postoecka atrakcija preku ID
- *     tags: [Attractions]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
+ * /api/reviews:
+ *   get:
+ *     summary: Земање на сите рецензии
+ *     tags: [Reviews]
+ *     responses:
+ *       200:
+ *         description: Листа на сите рецензии
+ */
+router.get('/reviews', async (req, res) => {
+    try {
+        const reviews = await Review.find();
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/reviews:
+ *   post:
+ *     summary: Додај нова рецензија
+ *     tags: [Reviews]
  *     requestBody:
  *       required: true
  *       content:
@@ -252,20 +153,126 @@ router.post('/attractions', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               price: { type: number, example: 70 }
- *               currency: { type: string, example: "EUR" }
+ *               attractionName: { type: string, example: "Колосеум" }
+ *               rating: { type: number, example: 5 }
+ *               comment: { type: string, example: "Прекрасно место!" }
+ *               author: { type: string, example: "maja_p" }
+ *     responses:
+ *       201:
+ *         description: Рецензијата е успешно додадена
+ */
+router.post('/reviews', async (req, res) => {
+    try {
+        const review = new Review(req.body);
+        const saved = await review.save();
+        res.status(201).json(saved);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// 4. EXPENSES RUTI
+// ==========================================
+
+/**
+ * @swagger
+ * /api/expenses:
+ *   get:
+ *     summary: Земање на сите трошоци
+ *     tags: [Expenses]
  *     responses:
  *       200:
- *         description: Uspesno izmeneta atrakcija
+ *         description: Листа на сите трошоци
  */
-router.put('/attractions/:id', async (req, res) => {
+router.get('/expenses', async (req, res) => {
     try {
-        const updatedAttraction = await Attraction.findByIdAndUpdate(
-            req.params.id, 
-            req.body, 
-            { new: true }
-        );
-        res.json(updatedAttraction);
+        const expenses = await Expense.find();
+        res.json(expenses);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/expenses:
+ *   post:
+ *     summary: Додај нов трошок
+ *     tags: [Expenses]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               category: { type: string, example: "Сместување" }
+ *               amount: { type: number, example: 120 }
+ *               currency: { type: string, example: "EUR" }
+ *               description: { type: string, example: "Хотел во Охрид" }
+ *     responses:
+ *       201:
+ *         description: Трошокот е успешно додаден
+ */
+router.post('/expenses', async (req, res) => {
+    try {
+        const expense = new Expense(req.body);
+        const saved = await expense.save();
+        res.status(201).json(saved);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// 5. DESTINATION INFOS RUTI
+// ==========================================
+
+/**
+ * @swagger
+ * /api/destinationinfos:
+ *   get:
+ *     summary: Земање на информации за дестинации
+ *     tags: [DestinationInfos]
+ *     responses:
+ *       200:
+ *         description: Листа на информации за дестинации
+ */
+router.get('/destinationinfos', async (req, res) => {
+    try {
+        const infos = await DestinationInfo.find();
+        res.json(infos);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/destinationinfos:
+ *   post:
+ *     summary: Додај информација за дестинација
+ *     tags: [DestinationInfos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               city: { type: string, example: "Охрид" }
+ *               country: { type: string, example: "Македонија" }
+ *               info: { type: string, example: "Познат по Охридското Езеро" }
+ *     responses:
+ *       201:
+ *         description: Информацијата е успешно додадена
+ */
+router.post('/destinationinfos', async (req, res) => {
+    try {
+        const info = new DestinationInfo(req.body);
+        const saved = await info.save();
+        res.status(201).json(saved);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

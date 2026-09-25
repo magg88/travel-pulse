@@ -1,38 +1,97 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Navigation({ user, onLogout }) {
-  const location = useLocation();
-  const p = location.pathname;
+  const navigate = useNavigate();
+
+  const role = user?.role || 'user';
 
   return (
-    <header className="navbar">
-      <Link to="/" className="nav-brand">📌 TravelPulse</Link>
+    <nav style={{ 
+      background: '#1e293b', 
+      padding: '15px 30px', 
+      color: 'white', 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+        <h2 style={{ margin: 0, color: '#38bdf8', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          ✈️ TravelPulse
+        </h2>
+        
+        {user && (
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>Почетна</Link>
+            <Link to="/trips" style={{ color: 'white', textDecoration: 'none' }}>Мои патувања</Link>
+            <Link to="/search" style={{ color: 'white', textDecoration: 'none' }}>Пребарај Атракции</Link>
+            <Link to="/weather-currency" style={{ color: 'white', textDecoration: 'none' }}>Време & Буџет</Link>
 
-      {user && (
-        <div className="nav-menu">
-          <Link to="/" className={`nav-item ${p === '/' ? 'active' : ''}`}>Почетна</Link>
-          <Link to="/trips" className={`nav-item ${p === '/trips' ? 'active' : ''}`}>Мои Патувања</Link>
-          <Link to="/add-trip" className={`nav-item ${p === '/add-trip' ? 'active' : ''}`}>Додади Патување</Link>
-          <Link to="/search" className={`nav-item ${p === '/search' ? 'active' : ''}`}>Пребарај Атракции</Link>
-          <Link to="/weather-currency" className={`nav-item ${p === '/weather-currency' ? 'active' : ''}`}>Време и Буџет</Link>
-          <a href="/api/docs/" target="_blank" rel="noreferrer" className="nav-item">Swagger API</a>
-        </div>
-      )}
+            {(role === 'user' || role === 'admin') && (
+              <Link to="/add-trip" style={{ 
+                color: '#4ade80', 
+                fontWeight: 'bold', 
+                textDecoration: 'none',
+                backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                padding: '5px 10px',
+                borderRadius: '5px'
+              }}>
+                ➕ Додај патување
+              </Link>
+            )}
 
-      <div className="user-badge">
-        {user ? (
-          <>
-            <span className="user-pill">
-              👤 {user.name || user.email} ({user.role || 'user'})
-            </span>
-            <button className="logout-pill" onClick={onLogout}>Одјави се</button>
-          </>
-        ) : (
-          <Link to="/login" className="login-pill">Најави се</Link>
+            {role === 'admin' && (
+              <span style={{ 
+                backgroundColor: '#ef4444', 
+                color: 'white',
+                padding: '4px 10px', 
+                borderRadius: '12px', 
+                fontSize: '12px', 
+                fontWeight: 'bold' 
+              }}>
+                🛡️ АДМИН ПАНЕЛ
+              </span>
+            )}
+          </div>
         )}
       </div>
-    </header>
+
+      <div>
+        {user ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <span>
+              Здраво, <b>{user.username || user.name || user.email}</b> 
+              <span style={{ 
+                marginLeft: '8px', 
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '0.8rem',
+                backgroundColor: role === 'admin' ? '#ef4444' : role === 'user' ? '#2563eb' : '#64748b'
+              }}>
+                {role === 'admin' ? ' Админ' : role === 'user' ? ' Корисник' : ' Гостин'}
+              </span>
+            </span>
+            <button 
+              onClick={onLogout} 
+              style={{ 
+                background: '#dc2626', 
+                color: 'white', 
+                border: 'none', 
+                padding: '6px 12px', 
+                borderRadius: '6px', 
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Одјави се
+            </button>
+          </div>
+        ) : (
+          <Link to="/login" style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>Најави се</Link>
+        )}
+      </div>
+    </nav>
   );
 }
 

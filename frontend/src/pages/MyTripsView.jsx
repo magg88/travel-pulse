@@ -1,102 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function MyTripsView({ trips: initialTrips }) {
-  const [trips, setTrips] = useState(initialTrips || []);
-  const [loading, setLoading] = useState(true);
+function MyTripsView({ trips }) {
+  const navigate = useNavigate();
 
-  // ✅ Штом се вчита/освежи страницата, повлечи ги патувањата од базата
-  useEffect(() => {
-    const loadTrips = async () => {
-      try {
-        const response = await fetch('/api/trips');
-        if (response.ok) {
-          const data = await response.json();
-          setTrips(data);
-        } else {
-          // Ако нема бекенд рута, вчитај од localStorage
-          const localData = localStorage.getItem('myTrips');
-          if (localData) setTrips(JSON.parse(localData));
-        }
-      } catch (err) {
-        console.warn('Вчитувам од localStore бидејќи API-то не е достапно:', err);
-        const localData = localStorage.getItem('myTrips');
-        if (localData) setTrips(JSON.parse(localData));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTrips();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="container" style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h3>Се вчитаваат вашите патувања...</h3>
-      </div>
-    );
-  }
+  // Читање на најавениот корисник и неговата улога од localStorage
+  const savedUser = localStorage.getItem('user');
+  const user = savedUser ? JSON.parse(savedUser) : null;
+  const role = user?.role || 'viewer';
+  const isGuest = role === 'viewer';
 
   return (
-    <div className="container">
-      <div className="page-title-row">
-        <h1 className="page-title">Мои Патувања ({trips.length})</h1>
-        <Link to="/add-trip" className="btn-submit-green" style={{ textDecoration: 'none', padding: '10px 20px' }}>
-          ➕ Додади Ново Патување
-        </Link>
-      </div>
+    <div className="container" style={{ maxWidth: '1000px', margin: '30px auto', padding: '0 20px' }}>
+      
+      {/* 👁️ Порака за Гостин кога е најавен како Viewer */}
+      {isGuest && (
+        <div style={{ 
+          backgroundColor: '#fef3c7', 
+          color: '#92400e', 
+          padding: '15px 20px', 
+          borderRadius: '8px', 
+          marginBottom: '25px',
+          borderLeft: '5px solid #f59e0b',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        }}>
+          <strong>👁️ Најавени сте како ГОСТИН (Viewer):</strong> Можете да ги разгледувате сите патувања, но ја немате опцијата за додавање или креирање нови патувања.
+        </div>
+      )}
 
-      <div className="cards-grid" style={{ marginTop: '30px' }}>
-        {trips.length === 0 ? (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#64748b', marginTop: '20px' }}>
-            Сеуште немате додадено патувања. Кликнете на „Додади Ново Патување“ за да започнете!
-          </div>
-        ) : (
-          trips.map((trip) => {
-            // ✅ Сигурна пресметка на буџетот (без разлика дали е бројка или објект)
-            let totalBudget = 0;
-            if (typeof trip.budget === 'number') {
-              totalBudget = trip.budget;
-            } else if (typeof trip.budget === 'object' && trip.budget !== null) {
-              totalBudget = (trip.budget.accommodation || 0) + 
-                            (trip.budget.food || 0) + 
-                            (trip.budget.transport || 0) + 
-                            (trip.budget.attractions || 0);
-            }
-
-            // ✅ Форматирање на датумите ако се зачувани како startDate/endDate
-            let datesDisplay = trip.dates;
-            if (!datesDisplay && trip.startDate && trip.endDate) {
-              const start = new Date(trip.startDate).toLocaleDateString('mk-MK');
-              const end = new Date(trip.endDate).toLocaleDateString('mk-MK');
-              datesDisplay = `${start} - ${end}`;
-            }
-
-            return (
-              <div key={trip._id || trip.id || Math.random()} className="card" style={{ cursor: 'default' }}>
-                <img 
-                  src={trip.img || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=600&q=80'} 
-                  alt={trip.title} 
-                  className="card-img" 
-                />
-                <div className="card-body" style={{ textAlign: 'left' }}>
-                  <h3 className="card-title">{trip.title}</h3>
-                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '8px' }}>
-                    📍 {trip.location || trip.destination || 'Непозната локација'}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#334155', marginBottom: '8px' }}>
-                    🗓️ <strong>Период:</strong> {datesDisplay || 'Не е дефиниран'}
-                  </div>
-                  <div style={{ fontSize: '0.9rem', color: '#2563eb', fontWeight: 'bold' }}>
-                    💶 Вкупен Буџет: €{totalBudget}
-                  </div>
-                </div>
-              </div>
-            );
-          })
+      {/* Заглавие и Копче за Додавање */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+        <h2>🧳 Мои Патувања</h2>
+        
+        {/* Доколку НЕ Е гостин (корисник или админ), прикажи го копчето за додавање */}
+        {!isGuest && (
+          <button 
+            onClick={() => navigate('/add-trip')}
+            style={{ 
+              backgroundColor: '#2563eb', 
+              color: 'white', 
+              border: 'none', 
+              padding: '10px 18px', 
+              borderRadius: '6px', 
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            ➕ Додај Ново Патување
+          </button>
         )}
       </div>
+
+      {/* Приказ на патувањата во картички */}
+      {!trips || trips.length === 0 ? (
+        <p style={{ color: '#64748b' }}>Сè уште немате додадено патувања.</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+          {trips.map((trip) => (
+            <div 
+              key={trip.id || trip._id} 
+              style={{ 
+                border: '1px solid #e2e8f0', 
+                borderRadius: '10px', 
+                overflow: 'hidden', 
+                boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+                backgroundColor: 'white'
+              }}
+            >
+              {trip.img && (
+                <img 
+                  src={trip.img} 
+                  alt={trip.title} 
+                  style={{ width: '100%', height: '180px', objectFit: 'cover' }} 
+                />
+              )}
+              
+              <div style={{ padding: '15px' }}>
+                <h3 style={{ margin: '0 0 8px 0', color: '#1e293b' }}>{trip.title}</h3>
+                <p style={{ margin: '0 0 5px 0', color: '#64748b', fontSize: '0.9rem' }}>
+                  📍 {trip.location || trip.destination}
+                </p>
+                <p style={{ margin: '0 0 12px 0', color: '#64748b', fontSize: '0.85rem' }}>
+                  📅 {trip.dates || `${trip.startDate ? new Date(trip.startDate).toLocaleDateString() : ''} - ${trip.endDate ? new Date(trip.endDate).toLocaleDateString() : ''}`}
+                </p>
+
+                {/* Детал за Буџет */}
+                {trip.budget && (
+                  <div style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                    <strong>Буџет:</strong> {typeof trip.budget === 'number' ? `${trip.budget} EUR` : `${(trip.budget.accommodation || 0) + (trip.budget.food || 0) + (trip.budget.transport || 0) + (trip.budget.attractions || 0)} EUR`}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,174 +1,288 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginUser, registerUser } from '../api';
 
-function LoginRegisterView({ setUser }) {
-  const [isLoginTab, setIsLoginTab] = useState(true);
+export default function LoginRegisterView({ setUser }) {
+  const [activeTab, setActiveTab] = useState('login'); // 'login' или 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [role, setRole] = useState('viewer'); // Стандардно: viewer (Гостин)
+  const [error, setError] = useState('');
 
+  // Функција за брзо пополнување на демо сметките
+  const handleQuickFill = (roleType) => {
+    if (roleType === 'admin') {
+      setEmail('admin@travelpulse.com');
+      setPassword('admin123');
+    } else if (roleType === 'user') {
+      setEmail('korisnik@travelpulse.com');
+      setPassword('user123');
+    } else {
+      setEmail('gostin@travelpulse.com');
+      setPassword('gostin123');
+    }
+  };
+
+  // Испраќање на формата
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg('');
+    setError('');
 
-    // Валидација за должина на лозинка
-    if (password.length < 6) {
-      setErrorMsg('Лозинката мора да содржи најмалку 6 карактери.');
-      return;
-    }
-
-    setLoading(true);
+    const isRegister = activeTab === 'register';
+    const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+    const payload = isRegister 
+      ? { username, email, password, role } 
+      : { email, password };
 
     try {
-      if (isLoginTab) {
-        // Повик за најава
-        const response = await loginUser({ email, password });
-        const loggedUser = response.data.user || {
-          name: response.data.name || email.split('@')[0],
-          email: email,
-          role: response.data.role || 'user'
-        };
+      const res = await fetch(`http://localhost:3000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
+      const data = await res.json();
 
-        localStorage.setItem('user', JSON.stringify(loggedUser));
-        setUser(loggedUser);
-        navigate('/');
-      } else {
-        // Повик за регистрација
-        const response = await registerUser({ 
-          username: name, 
-          name: name, 
-          email: email, 
-          password: password 
-        });
+      if (!res.ok) {
+        throw new Error(data.error || 'Настана грешка при автентикацијата.');
+      }
 
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
+      // Зачувај ги токенот и корисникот
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-        const newUser = response.data.user || {
-          name: name,
-          email: email,
-          role: 'user'
-        };
-
-        localStorage.setItem('user', JSON.stringify(newUser));
-        setUser(newUser);
-        navigate('/');
+      if (setUser) {
+        setUser(data.user);
       }
     } catch (err) {
-      console.error('Грешка при автентикација:', err);
-      setErrorMsg(
-        err.response?.data?.error || 
-        err.response?.data?.message || 
-        'Неуспешна регистрација/најава. Проверете ги податоците.'
-      );
-    } finally {
-      setLoading(false);
+      setError(err.message);
     }
   };
 
   return (
-    <div className="container" style={{ display: 'flex', justifyContent: 'center', marginTop: '50px', marginBottom: '50px' }}>
-      <div className="form-card" style={{ maxWidth: '450px', width: '100%', padding: '30px' }}>
-        <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '25px' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '30px',
+        width: '420px',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+        border: '1px solid #f1f5f9'
+      }}>
+        {/* ТАБОВИ ЗА НАЈАВА / РЕГИСТРАЦИЈА */}
+        <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '20px' }}>
           <button
             type="button"
-            onClick={() => { setIsLoginTab(true); setErrorMsg(''); }}
+            onClick={() => setActiveTab('login')}
             style={{
               flex: 1,
-              padding: '12px',
-              border: 'none',
+              padding: '10px',
               background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'login' ? '3px solid #6366f1' : 'none',
+              color: activeTab === 'login' ? '#4f46e5' : '#64748b',
               fontWeight: 'bold',
               fontSize: '1rem',
-              cursor: 'pointer',
-              color: isLoginTab ? '#4f46e5' : '#64748b',
-              borderBottom: isLoginTab ? '3px solid #4f46e5' : 'none',
-              marginBottom: '-2px'
+              cursor: 'pointer'
             }}
           >
             🔑 Најави се
           </button>
           <button
             type="button"
-            onClick={() => { setIsLoginTab(false); setErrorMsg(''); }}
+            onClick={() => setActiveTab('register')}
             style={{
               flex: 1,
-              padding: '12px',
-              border: 'none',
+              padding: '10px',
               background: 'none',
+              border: 'none',
+              borderBottom: activeTab === 'register' ? '3px solid #6366f1' : 'none',
+              color: activeTab === 'register' ? '#4f46e5' : '#64748b',
               fontWeight: 'bold',
               fontSize: '1rem',
-              cursor: 'pointer',
-              color: !isLoginTab ? '#4f46e5' : '#64748b',
-              borderBottom: !isLoginTab ? '3px solid #4f46e5' : 'none',
-              marginBottom: '-2px'
+              cursor: 'pointer'
             }}
           >
             📝 Регистрација
           </button>
         </div>
 
-        {errorMsg && (
-          <div style={{ padding: '10px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '6px', marginBottom: '15px', fontSize: '0.9rem', textAlign: 'center' }}>
-            {errorMsg}
+        {error && (
+          <div style={{ color: '#ef4444', marginBottom: '15px', textAlign: 'center', fontSize: '0.9rem', fontWeight: 'bold' }}>
+            {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          {!isLoginTab && (
-            <div className="form-group">
-              <label>Име и Презиме</label>
+          {/* ПОЛЕ ЗА КОРИСНИЧКО ИМЕ (Само при Регистрација) */}
+          {activeTab === 'register' && (
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', fontSize: '0.9rem', color: '#1e293b' }}>
+                Корисничко име
+              </label>
               <input
                 type="text"
-                className="form-control"
-                placeholder="пр. Маја Петровска"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                placeholder="Внесете корисничко име"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.95rem',
+                  boxSizing: 'border-box'
+                }}
               />
             </div>
           )}
 
-          <div className="form-group">
-            <label>Е-пошта (Email)</label>
+          {/* ПОЛЕ ЗА Е-ПОШТА */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', fontSize: '0.9rem', color: '#1e293b' }}>
+              Е-пошта (Email)
+            </label>
             <input
-              type="email"
-              className="form-control"
+              type="text"
               placeholder="vasiot-email@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.95rem',
+                boxSizing: 'border-box'
+              }}
             />
           </div>
 
-          <div className="form-group">
-            <label>Лозинка</label>
+          {/* ПОЛЕ ЗА ЛОЗИНКА */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', fontSize: '0.9rem', color: '#1e293b' }}>
+              Лозинка
+            </label>
             <input
               type="password"
-              className="form-control"
-              placeholder="•••••••• (минимум 6 карактери)"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.95rem',
+                boxSizing: 'border-box'
+              }}
             />
           </div>
 
-          <button type="submit" className="btn-submit-green" style={{ width: '100%', marginTop: '15px' }} disabled={loading}>
-            {loading ? 'Се процесира...' : isLoginTab ? 'Влези во системот' : 'Креирај профил'}
+          {/* ИЗБОР НА УЛОГА (Се прикажува само на табот Регистрација) */}
+          {activeTab === 'register' && (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px', fontSize: '0.9rem', color: '#1e293b' }}>
+                Избери улога (Role)
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.95rem',
+                  boxSizing: 'border-box',
+                  backgroundColor: 'white'
+                }}
+              >
+                <option value="viewer">👤 Гостин (Viewer)</option>
+                <option value="user">✈️ Обичен Корисник (User)</option>
+                <option value="admin">⚡ Администратор (Admin)</option>
+              </select>
+            </div>
+          )}
+
+          {/* ГЛАВНО КОПЧЕ */}
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#a7f3d0',
+              color: '#065f46',
+              border: 'none',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              cursor: 'pointer',
+              marginTop: '10px'
+            }}
+          >
+            {activeTab === 'register' ? 'Креирај сметка' : 'Влези во системот'}
           </button>
         </form>
+
+        {/* БРЗИ ДЕМО КОПЧИЊА ЗА ПРЕЗЕНТАЦИЈА */}
+        {activeTab === 'login' && (
+          <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '10px', fontWeight: '500' }}>
+              ⚡ Брз избор за презентација:
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('guest')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                👤 Гостин
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('user')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                ✈️ Корисник
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('admin')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                ⚡ Админ
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-export default LoginRegisterView;
